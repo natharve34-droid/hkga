@@ -381,7 +381,7 @@ function save(){
 const P = id => S.players.find(p => p.id === id);
 const T = id => S.teams.find(t => t.id === id);
 const curFormat = () => FMAP[S.format.id] || null;
-const is2x9 = () => { const f = curFormat(); return !!(f && (f.forces2x9 || S.format.mode === '2x9')); };
+const is2x9 = () => { const f = curFormat(); return !!(f && f.forces2x9) || S.format.mode === '2x9'; };
 const isTeamFormat = () => { const f = curFormat(); return !!f && f.unit !== 'individual'; };
 const teamOf = pid => S.teams.find(t => t.playerIds.includes(pid));
 const teamPlayers = t => t.playerIds.map(P).filter(Boolean);
@@ -793,6 +793,7 @@ function fmtCard(f, why){
       <dt>Play</dt><dd>${UNIT_LABEL[f.unit]}${n ? units : ''}</dd>
       <dt>Scoring</dt><dd>${f.scoring === 'points' ? 'Stableford points (highest wins)' : 'Strokes, net (lowest wins)'}</dd>
       <dt>Allowance</dt><dd>${esc(f.allowance)}</dd>
+      <dt>Competition</dt><dd>${f.forces2x9 || S.format.mode === '2x9' ? '2 × 9 holes: front 9, back 9 &amp; overall winners' : '18 holes'}</dd>
       <dt>Groups</dt><dd>${rt.G} × ${S.tee.groupSize}-ball${S.tee.start === 'two' ? ', two-tee start' : ''}</dd>
       <dt>Round time</dt><dd>~${fmtDur(rt.per)} per group · field done ~${fmtDur(rt.field)} after first tee</dd>
     </dl>
@@ -1359,6 +1360,7 @@ async function startOnline(tid){
   } catch (e) {
     loadingCard(`Couldn't reach the online tournament.<br><span class="small">${esc(e.message || String(e))}</span>`, true); return;
   }
+  if (!SY.mainExists){ setStatus('Not found'); loadingCard('This tournament link doesn\'t match a live tournament. Check you copied the whole link, or ask the organiser to send it again.', true); return; }
   SY.loaded = true; SY.mode = 'shared';
   S = normalize(S); render(); setStatus('Live ✓');
   // phones sleep between shots: catch up whenever the app comes back to the front
