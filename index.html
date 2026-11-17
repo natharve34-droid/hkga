@@ -1243,18 +1243,21 @@ window.addEventListener('storage', e => { if (SY.mode === 'local' && e.key === S
 const FRAMED = !!(window.claude && typeof window.claude.use === 'function');
 const MAIN_KEYS = ['version','isExample','tournament','players','dates','format','teams','teamsSize','tee','groups','sideComps','money'];
 const CLOUD_KEY = 'xmasGolf.cloud';
-const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
+const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js';
+/* Built-in project for this site. The publishable key is meant to be public (it's limited by the table's row-level security). */
+const BUILTIN_CLOUD = {url:'https://xqzrexjoknhpjzqaqxgl.supabase.co', key:'sb_publishable_gShAv-NEolff8JO7M1fcqw_elnZ5RK1'};
 const SY = {mode:'local', client:null, tid:'', readOnly:false, mainExists:false, loaded:false, timer:null, retry:null, chain:Promise.resolve(), sent:{main:{}, avail:{}, scores:{}}};
 const jMain = k => JSON.stringify(S[k] ?? null);
 const jAvail = id => (S.availability[id] && Object.keys(S.availability[id]).length) ? JSON.stringify(S.availability[id]) : undefined;
 const jScore = id => { const x = S.scores[id]; return (x && (x.f9 || x.b9)) ? JSON.stringify({f9:x.f9 || '', b9:x.b9 || ''}) : undefined; };
 const COLLS = [['avail', 'availability', jAvail], ['scores', 'scores', jScore]];
 
-function cloudCfg(){ try { const c = JSON.parse(localStorage.getItem(CLOUD_KEY) || 'null'); if (c && c.url && c.key) return c; } catch (e) {} return null; }
+function cloudCfg(){ try { const c = JSON.parse(localStorage.getItem(CLOUD_KEY) || 'null'); if (c && c.url && c.key) return c; } catch (e) {} return BUILTIN_CLOUD.url && BUILTIN_CLOUD.key ? BUILTIN_CLOUD : null; }
+const isBuiltin = c => !!c && c.url === BUILTIN_CLOUD.url && c.key === BUILTIN_CLOUD.key;
 function setCloudCfg(c){ try { if (c) localStorage.setItem(CLOUD_KEY, JSON.stringify(c)); else localStorage.removeItem(CLOUD_KEY); } catch (e) {} }
 function shareLink(){
   const c = cloudCfg(); if (!c || !SY.tid) return '';
-  return `${location.origin}${location.pathname}?t=${SY.tid}&c=${encodeURIComponent(btoa(c.url + '|' + c.key))}`;
+  return `${location.origin}${location.pathname}?t=${SY.tid}` + (isBuiltin(c) ? '' : `&c=${encodeURIComponent(btoa(c.url + '|' + c.key))}`);
 }
 function fromSent(){
   const s = blank();
@@ -1397,8 +1400,8 @@ function vOnline(){
     <label class="f">Publishable (anon) key<input id="cl-key" placeholder="sb_publishable_… or eyJ…" autocomplete="off" spellcheck="false"></label>
     <button class="btn" data-act="saveCloud">Connect</button></section>`;
   return `<section class="card"><h3>Play online</h3>
-    <p class="small muted">Connected to <b>${esc(c.url.replace(/^https?:\/\//, ''))}</b>. Put this tournament online to get a link for the players. Your current data is uploaded as the starting point.</p>
-    <div class="row"><button class="btn red" data-act="goOnline">Put this tournament online</button><button class="btn ghost sm" data-act="forgetCloud">Change project</button></div></section>`;
+    <p class="small muted">${isBuiltin(c) ? 'Ready to go live.' : `Connected to <b>${esc(c.url.replace(/^https?:\/\//, ''))}</b>.`} Put this tournament online to get a link for the players. Your current data is uploaded as the starting point.</p>
+    <div class="row"><button class="btn red" data-act="goOnline">Put this tournament online</button>${isBuiltin(c) ? '' : '<button class="btn ghost sm" data-act="forgetCloud">Use the built-in project</button>'}</div></section>`;
 }
 
 /* links can carry the project settings (c=) so players need no setup; store them and tidy the address bar */
